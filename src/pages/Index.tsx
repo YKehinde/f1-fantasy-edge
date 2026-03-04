@@ -1,29 +1,32 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Flag, Users, Car, TrendingUp, Zap } from "lucide-react";
+import { Flag, Users, Car, TrendingUp, Zap, Loader2, AlertCircle } from "lucide-react";
 import RaceSelector from "@/components/RaceSelector";
 import DriverCard from "@/components/DriverCard";
 import ConstructorCard from "@/components/ConstructorCard";
-import {
-  races,
-  type Race,
-  getRecommendedDrivers,
-  getRecommendedConstructors,
-} from "@/data/f1-fantasy";
+import { useSeasonData, type ProcessedRace } from "@/hooks/use-f1-data";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const SEASONS = [2025, 2024, 2023, 2022];
 
 const Index = () => {
-  const [selectedRace, setSelectedRace] = useState<Race>(races[races.length - 1]);
+  const [season, setSeason] = useState(2024);
+  const { data: allRaces, isLoading, error } = useSeasonData(season);
 
-  const driverResults = [...selectedRace.driverResults].sort(
-    (a, b) => b.fantasyPoints - a.fantasyPoints
-  );
+  const [selectedRound, setSelectedRound] = useState<number | null>(null);
 
-  const constructorResults = [...selectedRace.constructorResults].sort(
-    (a, b) => b.fantasyPoints - a.fantasyPoints
-  );
+  const races = allRaces ?? [];
+  const selectedRace = selectedRound
+    ? races.find(r => r.round === selectedRound) ?? races[races.length - 1]
+    : races[races.length - 1];
 
-  const driverRecs = getRecommendedDrivers(selectedRace.round);
-  const constructorRecs = getRecommendedConstructors(selectedRace.round);
+  const driverResults = selectedRace
+    ? [...selectedRace.driverResults].sort((a, b) => b.fantasyPoints - a.fantasyPoints)
+    : [];
+
+  const constructorResults = selectedRace
+    ? [...selectedRace.constructorResults].sort((a, b) => b.fantasyPoints - a.fantasyPoints)
+    : [];
 
   const topDriverPts = driverResults[0]?.fantasyPoints ?? 0;
   const topConstructorPts = constructorResults[0]?.fantasyPoints ?? 0;
@@ -43,119 +46,164 @@ const Index = () => {
                   F1 Fantasy <span className="text-gradient-red">Playbook</span>
                 </h1>
                 <p className="text-xs font-mono text-muted-foreground tracking-wide">
-                  DATA-BACKED PICKS • MAXIMIZE POINTS
+                  REAL DATA • MAXIMIZE POINTS
                 </p>
               </div>
             </div>
-            <RaceSelector selectedRace={selectedRace} onSelect={setSelectedRace} />
+
+            <div className="flex items-center gap-2">
+              {/* Season selector */}
+              <Select value={String(season)} onValueChange={(v) => { setSeason(parseInt(v)); setSelectedRound(null); }}>
+                <SelectTrigger className="w-[100px] bg-secondary border-border font-mono text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  {SEASONS.map(s => (
+                    <SelectItem key={s} value={String(s)} className="font-mono text-sm">{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Race selector */}
+              {selectedRace && races.length > 0 && (
+                <RaceSelector
+                  races={races}
+                  selectedRace={selectedRace}
+                  onSelect={(r) => setSelectedRound(r.round)}
+                />
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Race info bar */}
-        <motion.div
-          key={selectedRace.id}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-wrap items-center gap-4 text-sm font-mono"
-        >
-          <span className="text-2xl">{selectedRace.country}</span>
-          <div>
-            <div className="text-foreground font-semibold">{selectedRace.name}</div>
-            <div className="text-xs text-muted-foreground">{selectedRace.circuit}</div>
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <p className="font-mono text-sm text-muted-foreground">Loading {season} season data...</p>
+            <p className="font-mono text-xs text-muted-foreground">Fetching race results from API</p>
           </div>
-          <div className="ml-auto flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
-              <Zap className="w-3.5 h-3.5 text-primary" />
-              Top Driver: <span className="text-foreground font-bold">{topDriverPts} pts</span>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
-              <TrendingUp className="w-3.5 h-3.5 text-accent" />
-              Top Constructor: <span className="text-foreground font-bold">{topConstructorPts} pts</span>
-            </div>
+        )}
+
+        {/* Error state */}
+        {error && (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <AlertCircle className="w-8 h-8 text-destructive" />
+            <p className="font-mono text-sm text-destructive">Failed to load data</p>
+            <p className="font-mono text-xs text-muted-foreground">{(error as Error).message}</p>
           </div>
-        </motion.div>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Drivers - 2 columns on large */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-primary" />
-              <h2 className="font-display font-bold text-lg text-foreground">Driver Rankings</h2>
-              <span className="font-mono text-xs text-muted-foreground ml-1">by fantasy pts</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {driverResults.map((result, i) => {
-                const rec = driverRecs.find(r => r.driverId === result.driverId);
-                return (
-                  <DriverCard
-                    key={result.driverId}
-                    result={result}
-                    rank={i + 1}
-                    round={selectedRace.round}
-                    recommendation={rec && rec.score > 1.0 ? rec : undefined}
-                  />
-                );
-              })}
-            </div>
+        {/* No data */}
+        {!isLoading && !error && races.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Flag className="w-8 h-8 text-muted-foreground" />
+            <p className="font-mono text-sm text-muted-foreground">No completed races found for {season}</p>
           </div>
+        )}
 
-          {/* Constructors sidebar */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Car className="w-4 h-4 text-accent" />
-              <h2 className="font-display font-bold text-lg text-foreground">Constructors</h2>
-            </div>
+        {/* Race data */}
+        {selectedRace && !isLoading && (
+          <>
+            {/* Race info bar */}
+            <motion.div
+              key={`${season}-${selectedRace.round}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-wrap items-center gap-4 text-sm font-mono"
+            >
+              <span className="text-2xl">{selectedRace.flag}</span>
+              <div>
+                <div className="text-foreground font-semibold">{selectedRace.name}</div>
+                <div className="text-xs text-muted-foreground">{selectedRace.circuit} • {selectedRace.date}</div>
+              </div>
+              <div className="ml-auto flex items-center gap-4">
+                <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
+                  <Zap className="w-3.5 h-3.5 text-primary" />
+                  Top Driver: <span className="text-foreground font-bold">{topDriverPts} pts</span>
+                </div>
+                <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
+                  <TrendingUp className="w-3.5 h-3.5 text-accent" />
+                  Top Constructor: <span className="text-foreground font-bold">{topConstructorPts} pts</span>
+                </div>
+              </div>
+            </motion.div>
 
-            <div className="space-y-2">
-              {constructorResults.map((result, i) => {
-                const rec = constructorRecs.find(r => r.constructorId === result.constructorId);
-                return (
-                  <ConstructorCard
-                    key={result.constructorId}
-                    result={result}
-                    rank={i + 1}
-                    round={selectedRace.round}
-                    recommendation={rec && rec.score > 1.5 ? rec : undefined}
-                  />
-                );
-              })}
-            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Drivers */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-primary" />
+                  <h2 className="font-display font-bold text-lg text-foreground">Driver Rankings</h2>
+                  <span className="font-mono text-xs text-muted-foreground ml-1">
+                    {driverResults.length} drivers • fantasy pts
+                  </span>
+                </div>
 
-            {/* Quick tips */}
-            <div className="bg-card border border-border rounded-md p-4 mt-4">
-              <h3 className="font-display font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
-                <Zap className="w-4 h-4 text-primary" />
-                Quick Tips — R{selectedRace.round}
-              </h3>
-              <ul className="space-y-2 text-xs font-mono text-muted-foreground">
-                {driverRecs.slice(0, 3).map((rec) => {
-                  const driver = driverResults.find(r => r.driverId === rec.driverId);
-                  return (
-                    <li key={rec.driverId} className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">▸</span>
-                      <span>
-                        <span className="text-foreground font-medium">
-                          {rec.driverId.toUpperCase()}
-                        </span>{" "}
-                        — {rec.reason} (value: {rec.score})
-                      </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {driverResults.map((result, i) => (
+                    <DriverCard
+                      key={result.driverId}
+                      result={result}
+                      driver={selectedRace.drivers.find(d => d.driverId === result.driverId)}
+                      rank={i + 1}
+                      allRaces={races}
+                      currentRound={selectedRace.round}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Constructors sidebar */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Car className="w-4 h-4 text-accent" />
+                  <h2 className="font-display font-bold text-lg text-foreground">Constructors</h2>
+                </div>
+
+                <div className="space-y-2">
+                  {constructorResults.map((result, i) => (
+                    <ConstructorCard
+                      key={result.constructorId}
+                      result={result}
+                      rank={i + 1}
+                    />
+                  ))}
+                </div>
+
+                {/* Season summary */}
+                <div className="bg-card border border-border rounded-md p-4 mt-4">
+                  <h3 className="font-display font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-primary" />
+                    Season Stats — {season}
+                  </h3>
+                  <ul className="space-y-2 text-xs font-mono text-muted-foreground">
+                    <li className="flex justify-between">
+                      <span>Races loaded</span>
+                      <span className="text-foreground font-bold">{races.length}</span>
                     </li>
-                  );
-                })}
-              </ul>
+                    <li className="flex justify-between">
+                      <span>Current round</span>
+                      <span className="text-foreground font-bold">R{selectedRace.round}</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>Data source</span>
+                      <span className="text-primary">Jolpica F1 API</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-border mt-12 py-4">
         <div className="container mx-auto px-4">
           <p className="text-center font-mono text-xs text-muted-foreground">
-            Historical data from 2024 season • Not affiliated with F1 or F1 Fantasy
+            Real data via Jolpica F1 API • Fantasy points calculated from race results • Not affiliated with F1
           </p>
         </div>
       </footer>
