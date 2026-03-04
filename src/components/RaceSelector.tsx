@@ -1,27 +1,28 @@
-import { races, type Race } from "@/data/f1-fantasy";
+import { type ProcessedRace } from "@/hooks/use-f1-data";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Props = {
-  selectedRace: Race;
-  onSelect: (race: Race) => void;
+  races: ProcessedRace[];
+  selectedRace: ProcessedRace;
+  onSelect: (race: ProcessedRace) => void;
 };
 
-const RaceSelector = ({ selectedRace, onSelect }: Props) => {
+const RaceSelector = ({ races, selectedRace, onSelect }: Props) => {
   return (
     <Select
-      value={selectedRace.id}
+      value={String(selectedRace.round)}
       onValueChange={(val) => {
-        const race = races.find(r => r.id === val);
+        const race = races.find(r => r.round === parseInt(val));
         if (race) onSelect(race);
       }}
     >
-      <SelectTrigger className="w-full sm:w-[280px] bg-secondary border-border font-mono text-sm">
+      <SelectTrigger className="w-full sm:w-[300px] bg-secondary border-border font-mono text-sm">
         <SelectValue />
       </SelectTrigger>
-      <SelectContent className="bg-card border-border">
+      <SelectContent className="bg-card border-border max-h-[300px]">
         {races.map((race) => (
-          <SelectItem key={race.id} value={race.id} className="font-mono text-sm">
-            <span className="mr-2">{race.country}</span>
+          <SelectItem key={race.round} value={String(race.round)} className="font-mono text-sm">
+            <span className="mr-2">{race.flag}</span>
             R{race.round} — {race.name}
           </SelectItem>
         ))}

@@ -1,20 +1,38 @@
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, Minus, Zap, Trophy } from "lucide-react";
-import { getDriverById, getDriverAveragePoints, getDriverTrend, type RaceResult } from "@/data/f1-fantasy";
+import { type ProcessedRaceResult, type ProcessedDriver, type ProcessedRace } from "@/hooks/use-f1-data";
 
 type Props = {
-  result: RaceResult;
+  result: ProcessedRaceResult;
+  driver: ProcessedDriver | undefined;
   rank: number;
-  round: number;
-  recommendation?: { score: number; reason: string };
+  allRaces: ProcessedRace[];
+  currentRound: number;
 };
 
-const DriverCard = ({ result, rank, round, recommendation }: Props) => {
-  const driver = getDriverById(result.driverId);
+function getDriverAvg(driverId: string, races: ProcessedRace[], upToRound: number): number {
+  let total = 0, count = 0;
+  for (const race of races) {
+    if (race.round > upToRound) continue;
+    const r = race.driverResults.find(d => d.driverId === driverId);
+    if (r) { total += r.fantasyPoints; count++; }
+  }
+  return count > 0 ? Math.round(total / count * 10) / 10 : 0;
+}
+
+function getDriverTrend(driverId: string, races: ProcessedRace[], currentRound: number): "up" | "down" | "stable" {
+  const curr = races.find(r => r.round === currentRound)?.driverResults.find(d => d.driverId === driverId);
+  const prev = races.find(r => r.round === currentRound - 1)?.driverResults.find(d => d.driverId === driverId);
+  if (!curr || !prev) return "stable";
+  const diff = curr.fantasyPoints - prev.fantasyPoints;
+  return diff > 3 ? "up" : diff < -3 ? "down" : "stable";
+}
+
+const DriverCard = ({ result, driver, rank, allRaces, currentRound }: Props) => {
   if (!driver) return null;
 
-  const avg = getDriverAveragePoints(result.driverId, round);
-  const trend = getDriverTrend(result.driverId, round);
+  const avg = getDriverAvg(result.driverId, allRaces, currentRound);
+  const trend = getDriverTrend(result.driverId, allRaces, currentRound);
 
   const podiumColors: Record<number, string> = {
     1: "border-podium-gold",
@@ -34,12 +52,10 @@ const DriverCard = ({ result, rank, round, recommendation }: Props) => {
         podiumColors[rank] || "border-border"
       }`}
     >
-      {/* Rank badge */}
       <div className="absolute -top-2.5 -left-2 flex items-center justify-center w-7 h-7 rounded-sm bg-secondary font-mono text-xs font-bold text-foreground border border-border">
         {rank}
       </div>
 
-      {/* Team color strip */}
       <div
         className="absolute top-0 right-0 w-1 h-full rounded-r-md"
         style={{ backgroundColor: driver.teamColor }}
@@ -52,13 +68,6 @@ const DriverCard = ({ result, rank, round, recommendation }: Props) => {
             <h3 className="font-display font-semibold text-sm text-foreground truncate">{driver.name}</h3>
           </div>
           <p className="text-xs text-muted-foreground truncate">{driver.team}</p>
-          
-          {recommendation && (
-            <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-sm bg-primary/10 text-primary text-[10px] font-mono font-medium">
-              <Zap className="w-3 h-3" />
-              {recommendation.reason}
-            </span>
-          )}
         </div>
 
         <div className="text-right flex-shrink-0">
@@ -66,17 +75,14 @@ const DriverCard = ({ result, rank, round, recommendation }: Props) => {
             {result.fantasyPoints}
           </div>
           <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">pts</span>
-          
+
           <div className="flex items-center justify-end gap-1 mt-2">
             <TrendIcon className={`w-3 h-3 ${trendColor}`} />
-            <span className={`font-mono text-xs ${trendColor}`}>
-              avg {avg}
-            </span>
+            <span className={`font-mono text-xs ${trendColor}`}>avg {avg}</span>
           </div>
         </div>
       </div>
 
-      {/* Stats row */}
       <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
         <div className="flex items-center gap-1">
           <Trophy className="w-3 h-3 text-muted-foreground" />
@@ -84,9 +90,7 @@ const DriverCard = ({ result, rank, round, recommendation }: Props) => {
             P{result.position || "DNF"}
           </span>
         </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          Q{result.qualifyingPosition}
-        </div>
+        <div className="font-mono text-xs text-muted-foreground">Q{result.qualifyingPosition}</div>
         <div className={`font-mono text-xs ${result.positionsGained > 0 ? "text-positive" : result.positionsGained < 0 ? "text-negative" : "text-muted-foreground"}`}>
           {result.positionsGained > 0 ? "+" : ""}{result.positionsGained} pos
         </div>
@@ -96,9 +100,6 @@ const DriverCard = ({ result, rank, round, recommendation }: Props) => {
         {result.dnf && (
           <span className="font-mono text-[10px] text-destructive font-medium">DNF</span>
         )}
-        <div className="ml-auto font-mono text-xs text-accent">
-          ${driver.price}M
-        </div>
       </div>
     </motion.div>
   );
