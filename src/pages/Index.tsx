@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Flag, Users, Car, TrendingUp, Zap, Loader2, AlertCircle } from "lucide-react";
+import { Flag, Users, Car, TrendingUp, Zap, Loader2, AlertCircle, Crown } from "lucide-react";
 import RaceSelector from "@/components/RaceSelector";
 import DriverCard from "@/components/DriverCard";
 import ConstructorCard from "@/components/ConstructorCard";
+import TeamBuilder from "@/components/TeamBuilder";
 import { useSeasonData, type ProcessedRace } from "@/hooks/use-f1-data";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 const SEASONS = [2025, 2024, 2023, 2022];
 
@@ -51,7 +53,16 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Team Builder */}
+              {races.length > 0 && selectedRace && (
+                <TeamBuilder races={races} currentRound={selectedRace.round}>
+                  <Button variant="outline" size="sm" className="font-mono text-xs border-border bg-secondary hover:glow-red-subtle gap-1.5">
+                    <Crown className="w-3.5 h-3.5 text-accent" />
+                    Team Builder
+                  </Button>
+                </TeamBuilder>
+              )}
               {/* Season selector */}
               <Select value={String(season)} onValueChange={(v) => { setSeason(parseInt(v)); setSelectedRound(null); }}>
                 <SelectTrigger className="w-[100px] bg-secondary border-border font-mono text-sm">
