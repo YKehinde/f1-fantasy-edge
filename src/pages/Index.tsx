@@ -6,21 +6,27 @@ import DriverCard from "@/components/DriverCard";
 import ConstructorCard from "@/components/ConstructorCard";
 import TeamBuilder from "@/components/TeamBuilder";
 import { useSeasonData, type ProcessedRace } from "@/hooks/use-f1-data";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
 const SEASONS = [2025, 2024, 2023, 2022];
 
 const Index = () => {
-  const [season, setSeason] = useState(2024);
+  const [season, setSeason] = useState(2025);
   const { data: allRaces, isLoading, error } = useSeasonData(season);
 
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
 
   const races = allRaces ?? [];
   const selectedRace = selectedRound
-    ? races.find(r => r.round === selectedRound) ?? races[races.length - 1]
-    : races[races.length - 1];
+    ? (races.find((r) => r.round === selectedRound) ?? races[0])
+    : races[0];
 
   const driverResults = selectedRace
     ? [...selectedRace.driverResults].sort((a, b) => b.fantasyPoints - a.fantasyPoints)
@@ -57,20 +63,32 @@ const Index = () => {
               {/* Team Builder */}
               {races.length > 0 && selectedRace && (
                 <TeamBuilder races={races} currentRound={selectedRace.round}>
-                  <Button variant="outline" size="sm" className="font-mono text-xs border-border bg-secondary hover:glow-red-subtle gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="font-mono text-xs border-border bg-secondary hover:glow-red-subtle gap-1.5"
+                  >
                     <Crown className="w-3.5 h-3.5 text-accent" />
                     Team Builder
                   </Button>
                 </TeamBuilder>
               )}
               {/* Season selector */}
-              <Select value={String(season)} onValueChange={(v) => { setSeason(parseInt(v)); setSelectedRound(null); }}>
+              <Select
+                value={String(season)}
+                onValueChange={(v) => {
+                  setSeason(parseInt(v));
+                  setSelectedRound(null);
+                }}
+              >
                 <SelectTrigger className="w-[100px] bg-secondary border-border font-mono text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">
-                  {SEASONS.map(s => (
-                    <SelectItem key={s} value={String(s)} className="font-mono text-sm">{s}</SelectItem>
+                  {SEASONS.map((s) => (
+                    <SelectItem key={s} value={String(s)} className="font-mono text-sm">
+                      {s}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -93,8 +111,12 @@ const Index = () => {
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            <p className="font-mono text-sm text-muted-foreground">Loading {season} season data...</p>
-            <p className="font-mono text-xs text-muted-foreground">Fetching race results from API</p>
+            <p className="font-mono text-sm text-muted-foreground">
+              Loading {season} season data...
+            </p>
+            <p className="font-mono text-xs text-muted-foreground">
+              Fetching race results from API
+            </p>
           </div>
         )}
 
@@ -111,7 +133,9 @@ const Index = () => {
         {!isLoading && !error && races.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Flag className="w-8 h-8 text-muted-foreground" />
-            <p className="font-mono text-sm text-muted-foreground">No completed races found for {season}</p>
+            <p className="font-mono text-sm text-muted-foreground">
+              No completed races found for {season}
+            </p>
           </div>
         )}
 
@@ -128,7 +152,9 @@ const Index = () => {
               <span className="text-2xl">{selectedRace.flag}</span>
               <div>
                 <div className="text-foreground font-semibold">{selectedRace.name}</div>
-                <div className="text-xs text-muted-foreground">{selectedRace.circuit} • {selectedRace.date}</div>
+                <div className="text-xs text-muted-foreground">
+                  {selectedRace.circuit} • {selectedRace.date}
+                </div>
               </div>
               <div className="ml-auto flex items-center gap-4">
                 <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
@@ -137,7 +163,8 @@ const Index = () => {
                 </div>
                 <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
                   <TrendingUp className="w-3.5 h-3.5 text-accent" />
-                  Top Constructor: <span className="text-foreground font-bold">{topConstructorPts} pts</span>
+                  Top Constructor:{" "}
+                  <span className="text-foreground font-bold">{topConstructorPts} pts</span>
                 </div>
               </div>
             </motion.div>
@@ -147,7 +174,9 @@ const Index = () => {
               <div className="lg:col-span-2 space-y-4">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-primary" />
-                  <h2 className="font-display font-bold text-lg text-foreground">Driver Rankings</h2>
+                  <h2 className="font-display font-bold text-lg text-foreground">
+                    Driver Rankings
+                  </h2>
                   <span className="font-mono text-xs text-muted-foreground ml-1">
                     {driverResults.length} drivers • fantasy pts
                   </span>
@@ -158,7 +187,7 @@ const Index = () => {
                     <DriverCard
                       key={result.driverId}
                       result={result}
-                      driver={selectedRace.drivers.find(d => d.driverId === result.driverId)}
+                      driver={selectedRace.drivers.find((d) => d.driverId === result.driverId)}
                       rank={i + 1}
                       allRaces={races}
                       currentRound={selectedRace.round}
@@ -176,11 +205,7 @@ const Index = () => {
 
                 <div className="space-y-2">
                   {constructorResults.map((result, i) => (
-                    <ConstructorCard
-                      key={result.constructorId}
-                      result={result}
-                      rank={i + 1}
-                    />
+                    <ConstructorCard key={result.constructorId} result={result} rank={i + 1} />
                   ))}
                 </div>
 
@@ -214,7 +239,14 @@ const Index = () => {
       <footer className="border-t border-border mt-12 py-4">
         <div className="container mx-auto px-4">
           <p className="text-center font-mono text-xs text-muted-foreground">
-            Real data via Jolpica F1 API • Fantasy points calculated from race results • Not affiliated with F1
+            Built by{" "}
+            <a href="https://medium.com/@YAKStack" className="text-primary underline">
+              YAKStack
+            </a>
+          </p>
+          <p className="text-center font-mono text-xs text-muted-foreground">
+            Real data via Jolpica F1 API • Fantasy points calculated from race results • Not
+            affiliated with F1
           </p>
         </div>
       </footer>

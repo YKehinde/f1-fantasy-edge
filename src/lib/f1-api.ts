@@ -1,3 +1,6 @@
+import constructorData from "@/data/constructorData.json";
+import driverData from "@/data/driverData.json";
+
 const BASE_URL = "https://api.jolpi.ca/ergast/f1";
 
 type ErgastResponse<T> = {
@@ -120,12 +123,42 @@ export function getCountryFlag(country: string): string {
 
 // Team colors
 const teamColors: Record<string, string> = {
-  "red_bull": "#3671C6", "mclaren": "#FF8000", "ferrari": "#E8002D",
-  "mercedes": "#27F4D2", "aston_martin": "#229971", "alpine": "#0093CC",
-  "rb": "#6692FF", "haas": "#B6BABD", "williams": "#64C4FF",
-  "sauber": "#52E252", "kick_sauber": "#52E252", "alphatauri": "#6692FF",
-  "alfa": "#C92D4B", "racing_point": "#F596C8", "toro_rosso": "#6692FF",
+  "red_bull": "#003282", "mclaren": "#FF8000", "ferrari": "#E8002D",
+  "mercedes": "#007560", "aston_martin": "#229971", "alpine": "#0093CC",
+  "rb": "#2345AB", "racing_bulls": "#2345AB", "haas": "#B6BABD", "williams": "#64C4FF",
+  "sauber": "#6B0015", "kick_sauber": "#6B0015", "cadillac": "#444444",
+  "alphatauri": "#2345AB", "alfa": "#C92D4B", "racing_point": "#F596C8", "toro_rosso": "#2345AB",
 };
+
+// Map Ergast/Jolpica constructorId → constructorData.json slug
+const constructorIdToSlug: Record<string, string> = {
+  red_bull: "red-bull-racing",
+  mclaren: "mclaren",
+  ferrari: "ferrari",
+  mercedes: "mercedes",
+  aston_martin: "aston-martin",
+  alpine: "alpine",
+  rb: "racing-bulls",
+  racing_bulls: "racing-bulls",
+  haas: "haas-f1-team",
+  sauber: "audi",
+  kick_sauber: "audi",
+  cadillac: "cadillac",
+  williams: "williams",
+};
+
+const constructorImageMap = new Map(constructorData.map(c => [c.slug, c.imageUrl]));
+
+export function getConstructorImage(constructorId: string): string | undefined {
+  const slug = constructorIdToSlug[constructorId];
+  return slug ? constructorImageMap.get(slug) : undefined;
+}
+
+const driverImageMap = new Map(driverData.players.map(d => [d.fullName, d.imageUrl]));
+
+export function getDriverImage(fullName: string): string | undefined {
+  return driverImageMap.get(fullName);
+}
 
 export function getTeamColor(constructorId: string): string {
   return teamColors[constructorId] || "#888888";

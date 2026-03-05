@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>F1 Fantasy Edge — Medium Post</title>
+<style>
+  body { font-family: Georgia, serif; font-size: 18px; line-height: 1.8; max-width: 740px; margin: 60px auto; padding: 0 20px; color: #292929; }
+  h1 { font-size: 42px; line-height: 1.15; font-weight: 700; margin-bottom: 8px; }
+  h2 { font-size: 26px; font-weight: 700; margin-top: 48px; }
+  p { margin: 20px 0; }
+  code { background: #f2f2f2; padding: 2px 6px; border-radius: 3px; font-size: 15px; font-family: monospace; }
+  pre { background: #f2f2f2; padding: 20px; border-radius: 4px; overflow-x: auto; }
+  pre code { background: none; padding: 0; font-size: 14px; }
+  table { border-collapse: collapse; width: 100%; margin: 24px 0; }
+  th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+  th { background: #f9f9f9; font-weight: 700; }
+  ul, ol { padding-left: 28px; margin: 16px 0; }
+  li { margin: 6px 0; }
+  blockquote { border-left: 3px solid #ccc; margin: 24px 0; padding: 2px 20px; color: #555; }
+  hr { border: none; border-top: 1px solid #e5e5e5; margin: 40px 0; }
+  em { font-style: italic; }
+  strong { font-weight: 700; }
+  a { color: #1a8917; }
+</style>
+</head>
+<body>
+<h1>I Built a Live F1 Fantasy Analytics App in React — Here's Every Technical Decision</h1>
+<p><em>Live race data, a greedy optimization algorithm, and a dark carbon UI — how F1 Fantasy Edge works under the hood.</em></p>
+<hr />
+<h2>Why I Built This</h2>
+<p>Formula 1 fantasy is harder than it looks. You're picking 5 drivers and up to 2 constructors within a fixed budget — trying to predict qualifying pace, positions gained, fastest laps, and DNF risk across 24 races a season. The official game gives you almost no analytics to work with.</p>
+<p>I'm a developer and an F1 fan. Spreadsheets weren't cutting it. So I built <strong>F1 Fantasy Edge</strong>: a live analytics dashboard and team optimiser, powered by real F1 race data. Here's every technical decision I made along the way.</p>
+<hr />
+<h2>What the App Does</h2>
+<p>F1 Fantasy Edge is a live analytics and team-building platform that helps F1 fans:</p>
+<ul>
+<li><strong>Browse live race results</strong> from the official F1 API, across the 2022–2025 seasons</li>
+<li><strong>Analyze fantasy scores</strong> per driver and constructor per race, including qualifying, positions gained, fastest laps, and DNFs</li>
+<li><strong>Track driver form</strong> — is a driver trending up, down, or stable compared to their season average?</li>
+<li><strong>Build an optimised team</strong> using a greedy algorithm that maximises projected points within a budget cap</li>
+<li><strong>Compare value</strong> — every driver and constructor is ranked by points-per-million-dollar</li>
+</ul>
+<hr />
+<h2>Live Data via the Jolpica F1 API</h2>
+<p>The first decision was: real data or mocked data? Real data wins, always — so the app pulls from the <a href="https://api.jolpi.ca">Jolpica F1 API</a>, an Ergast-compatible wrapper over the official F1 data feed.</p>
+<p>Three endpoints power everything:</p>
+<pre><code class="language-ts">// Season race calendar
+GET https://api.jolpi.ca/ergast/f1/{season}.json
+
+// Race results + finishing positions
+GET https://api.jolpi.ca/ergast/f1/{season}/{round}/results.json
+
+// Qualifying grid positions
+GET https://api.jolpi.ca/ergast/f1/{season}/{round}/qualifying.json
+</code></pre>
+<p>The challenge with fetching a full season is rate limits. Loading all 24 rounds naively would hammer the API. The solution: <strong>batch requests in groups of 4</strong>, with a small delay between batches. TanStack Query handles caching so subsequent visits are instant.</p>
+<pre><code class="language-ts">// Fetch all completed races in batches of 4
+for (let i = 0; i &lt; rounds.length; i += BATCH_SIZE) {
+  const batch = rounds.slice(i, i + BATCH_SIZE);
+  const results = await Promise.all(batch.map(round =&gt; fetchRaceResults(season, round)));
+  await delay(200); // Respect rate limits
+}
+</code></pre>
+<hr />
+<h2>The Fantasy Scoring Engine</h2>
+<p>All scoring happens in <code>lib/f1-api.ts</code>. The <code>calculateFantasyPoints()</code> function mirrors the real F1 Fantasy scoring rules:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Detail</th>
+<th>Points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Race finish</strong></td>
+<td>P1</td>
+<td>+25</td>
+</tr>
+<tr>
+<td></td>
+<td>P2</td>
+<td>+18</td>
+</tr>
+<tr>
+<td></td>
+<td>P3</td>
+<td>+15</td>
+</tr>
+<tr>
+<td></td>
+<td>P4–P10</td>
+<td>+12 down to +1</td>
+</tr>
+<tr>
+<td><strong>Qualifying</strong></td>
+<td>P1</td>
+<td>+10</td>
+</tr>
+<tr>
+<td></td>
+<td>P2</td>
+<td>+8</td>
+</tr>
+<tr>
+<td></td>
+<td>P3–P10</td>
+<td>+6 down to +1</td>
+</tr>
+<tr>
+<td><strong>Positions gained</strong></td>
+<td>Per position (max 5)</td>
+<td>+1 each</td>
+</tr>
+<tr>
+<td><strong>Fastest lap</strong></td>
+<td>—</td>
+<td>+5</td>
+</tr>
+<tr>
+<td><strong>DNF</strong></td>
+<td>—</td>
+<td>−10</td>
+</tr>
+</tbody>
+</table>
+<p>Constructors are handled separately: both drivers' points are summed, and a <strong>+5 bonus</strong> is added if both cars finish the race.</p>
+<pre><code class="language-ts">function calculateConstructorPoints(driverResults: DriverResult[]): number {
+  const total = driverResults.reduce((sum, d) =&gt; sum + d.fantasyPoints, 0);
+  const bothFinished = driverResults.every(d =&gt; !d.dnf);
+  return total + (bothFinished ? 5 : 0);
+}
+</code></pre>
+<hr />
+<h2>Driver Trend Analysis</h2>
+<p>Raw points per race are useful, but form matters more. Each <code>DriverCard</code> computes a trend by comparing the driver's last result to their season average:</p>
+<ul>
+<li><strong>↑ Up</strong> — last race points &gt; season average</li>
+<li><strong>↓ Down</strong> — last race points &lt; season average  </li>
+<li><strong>→ Stable</strong> — within threshold</li>
+</ul>
+<p>This gives you an at-a-glance read on who's in form — critical for weekly team changes.</p>
+<hr />
+<h2>The Team Builder: Greedy Optimization</h2>
+<p>The Team Builder is the most technically interesting part. Given all race data up to the current round, it finds the highest-scoring 5-driver + 2-constructor team within a user-defined budget.</p>
+<p>The algorithm lives in <code>lib/team-builder.ts</code>:</p>
+<ol>
+<li><strong>Score every driver</strong> by average fantasy points per race → compute a <code>valueScore</code> (points per $M)</li>
+<li><strong>Score every constructor</strong> the same way</li>
+<li><strong>Try all constructor pairs</strong> within budget</li>
+<li><strong>For each constructor pair</strong>, greedily pick the top 5 drivers by value score that fit the remaining budget</li>
+<li><strong>Return the combination</strong> with the highest total projected points</li>
+</ol>
+<pre><code class="language-ts">function buildOptimalTeam(races: ProcessedRace[], upToRound: number, budget: number) {
+  const driverStats = computeDriverStats(races, upToRound);
+  const constructorStats = computeConstructorStats(races, upToRound);
+
+  let best = null;
+
+  for (const constructorPair of allConstructorPairs(constructorStats, budget)) {
+    const remainingBudget = budget - constructorPair.totalCost;
+    const drivers = topDriversByValue(driverStats, remainingBudget, 5);
+    const projected = drivers.totalPoints + constructorPair.totalPoints;
+
+    if (!best || projected &gt; best.projected) {
+      best = { drivers, constructors: constructorPair, projected };
+    }
+  }
+
+  return best;
+}
+</code></pre>
+<p>The Team Builder UI exposes this through a <strong>budget slider ($60M–$150M)</strong> and three tabs:
+- <strong>Optimal Lineup</strong> — AI-selected team with projected points and cost breakdown
+- <strong>All Drivers</strong> — every driver ranked by value score
+- <strong>All Constructors</strong> — every constructor ranked by value score</p>
+<hr />
+<h2>Data Architecture</h2>
+<p>Each processed race result carries everything needed for scoring and display:</p>
+<pre><code class="language-ts">interface ProcessedDriverResult {
+  driverId: string;
+  name: string;
+  team: string;
+  teamColor: string;
+  imageUrl: string;        // Official F1 headshot from Cloudinary CDN
+  position: number;
+  qualifyingPosition: number;
+  positionsGained: number;
+  fastestLap: boolean;
+  dnf: boolean;
+  fantasyPoints: number;
+}
+</code></pre>
+<p>Official driver and constructor images are pulled from the Formula 1 Cloudinary CDN, mapped by driver/constructor ID in <code>driverData.json</code> and <code>constructorData.json</code>. This means every card shows the real F1 headshot or car livery — no placeholder images.</p>
+<hr />
+<h2>UI &amp; Design</h2>
+<p>The app runs a dark carbon theme — deliberately close to the aesthetic of the official F1 game:</p>
+<ul>
+<li><strong>Dark backgrounds</strong>: <code>bg-carbon</code>, <code>bg-card</code>, <code>bg-secondary</code></li>
+<li><strong>Red accent</strong>: matches F1's brand colour</li>
+<li><strong>Gold/silver/bronze podium borders</strong> on the top 3 driver cards</li>
+<li><strong>Team colour stripes</strong> — each driver card shows their constructor's hex colour</li>
+<li><strong>Country flag emojis</strong> — 20+ nationalities mapped to flags</li>
+<li><strong>Framer Motion</strong> — staggered card entrance animations when switching races</li>
+</ul>
+<p>The Team Builder opens as a <strong>bottom sheet on mobile</strong>, full sidebar on desktop — responsive without a single media query in JavaScript, all Tailwind.</p>
+<hr />
+<h2>What I Learned</h2>
+<ol>
+<li><strong>Model your domain first</strong> — getting the <code>ProcessedRace</code> shape right made the entire UI layer trivial to build.</li>
+<li><strong>Derived state beats stored state</strong> — budget remaining, trend direction, value scores, team validity: all computed, never stored. No sync bugs.</li>
+<li><strong>Batch your API calls</strong> — a 200ms delay between batches of 4 is all it takes to stay within rate limits while loading a full season.</li>
+<li><strong>Greedy algorithms are underrated</strong> — for a budget optimization problem with ~20 drivers and ~10 constructors, a greedy approach runs instantly and produces excellent results.</li>
+<li><strong>shadcn/ui + Tailwind is genuinely fast</strong> — 46 accessible components, zero fighting with a design system's opinions.</li>
+</ol>
+<hr />
+<h2>What's Next</h2>
+<ul>
+<li>Head-to-head team comparison mode</li>
+<li>Price change tracker (delta from last week, like the real F1 Fantasy game)</li>
+<li>Circuit-specific driver weighting (street circuit vs. power circuit specialists)</li>
+<li>Push notifications for team change windows</li>
+</ul>
+<hr />
+<h2>Try It / Read the Code</h2>
+<p><strong><a href="#">→ Live Demo</a></strong> | <strong><a href="#">→ GitHub Repository</a></strong></p>
+<p>The project is open source. If you're building anything in the F1 or sports fantasy analytics space, the scoring engine, batch fetching pattern, and greedy optimization algorithm are all worth a look.</p>
+<p><em>Built with React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Query, Framer Motion, Lucide Icons — and live data from the Jolpica F1 API.</em></p>
+<hr />
+<p><em>If this was useful, follow me here on Medium for more posts on React, TypeScript, and building things in public.</em></p>
+</body>
+</html>

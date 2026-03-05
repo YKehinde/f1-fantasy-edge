@@ -1,0 +1,101 @@
+[
+  {
+    "name": "Mercedes",
+    "slug": "mercedes",
+    "teamId": 28,
+    "imageUrl": "https://media.formula1.com/image/upload/c_crop,g_east,h_803,w_2600/ar_3:2,c_pad,g_west,h_1400/ar_3:2,c_lpad,g_south_west,w_2400/l_v1771230785:common:f1:2026:mercedes:2026mercedeslogowhitefr/c_scale,w_500/fl_layer_apply,g_east,x_300,y_-350/b_rgb:007560/v1771230785/common/f1/2026/mercedes/2026mercedescarright.png",
+    "ownershipPercent": 23.0,
+    "points": 0,
+    "priceMillions": 29.3
+  },
+  {
+    "name": "McLaren",
+    "slug": "mclaren",
+    "teamId": 27,
+    "imageUrl": "https://media.formula1.com/image/upload/c_crop,g_east,h_803,w_2600/ar_3:2,c_pad,g_west,h_1400/ar_3:2,c_lpad,g_south_west,w_2400/l_v1771230785:common:f1:2026:mclaren:2026mclarenlogowhitefr/c_scale,w_500/fl_layer_apply,g_east,x_300,y_-350/b_rgb:863400/v1771230785/common/f1/2026/mclaren/2026mclarencarright.png",
+    "ownershipPercent": 18.0,
+    "points": 0,
+    "priceMillions": 28.9
+  },
+  {
+    "name": "Red Bull Racing",
+    "slug": "red-bull-racing",
+    "teamId": 29,
+    "imageUrl": "https://media.formula1.com/image/upload/c_crop,g_east,h_803,w_2600/ar_3:2,c_pad,g_west,h_1400/ar_3:2,c_lpad,g_south_west,w_2400/l_v1771230785:common:f1:2026:redbullracing:2026redbullracinglogowhitefr/c_scale,w_500/fl_layer_apply,g_east,x_300,y_-350/b_rgb:003282/v1771230785/common/f1/2026/redbullracing/2026redbullracingcarright.png",
+    "ownershipPercent": 10.0,
+    "points": 0,
+    "priceMillions": 28.2
+  },
+  {
+    "name": "Ferrari",
+    "slug": "ferrari",
+    "teamId": 25,
+    "imageUrl": "https://media.formula1.com/image/upload/c_crop,g_east,h_803,w_2600/ar_3:2,c_pad,g_west,h_1400/ar_3:2,c_lpad,g_south_west,w_2400/l_v1771230785:common:f1:2026:ferrari:2026ferrarilogowhitefr/c_scale,w_500/fl_layer_apply,g_east,x_300,y_-350/b_rgb:710006/v1771230785/common/f1/2026/ferrari/2026ferraricarright.png",
+    "ownershipPercent": 40.0,
+    "points": 0,
+    "priceMillions": 23.3
+  },
+  {
+    "name": "Alpine",
+    "slug": "alpine",
+    "teamId": 23,
+    "imageUrl": "https://media.formula1.com/image/upload/c_crop,g_east,h_803,w_2600/ar_3:2,c_pad,g_west,h_1400/ar_3:2,c_lpad,g_south_west,w_2400/l_v1771230785:common:f1:2026:alpine:2026alpinelogowhitefr/c_scale,w_500/fl_layer_apply,g_east,x_300,y_-350/b_rgb:005081/v1771230785/common/f1/2026/alpine/2026alpinecarright.png",
+    "ownershipPercent": 8.0,
+    "points": 0,
+    "priceMillions": 12.5
+  },
+  {
+    "name": "Williams",
+    "slug": "williams",
+    "teamId": 210,
+    "imageUrl": "https://media.formula1.com/image/upload/c_crop,g_east,h_803,w_2600/ar_3:2,c_pad,g_west,h_1400/ar_3:2,c_lpad,g_south_west,w_2400/l_v1771230785:common:f1:2026:williams:2026williamslogowhitefr/c_scale,w_500/fl_layer_apply,g_east,x_300,y_-350/b_rgb:000681/v1771230785/common/f1/2026/williams/2026williamscarright.png",
+    "ownershipPercent": 18.0,
+    "points": 0,
+    "priceMillions": 12.0
+  },
+  {
+    "name": "Aston Martin",
+    "slug": "aston-martin",
+    "teamId": 24,
+    "imageUrl": "https://media.formula1.com/image/upload/c_crop,g_east,h_803,w_2600/ar_3:2,c_pad,g_west,h_1400/ar_3:2,c_lpad,g_south_west,w_2400/l_v1771230785:common:f1:2026:astonmartin:2026astonmartinlogowhitefr/c_scale,w_500/fl_layer_apply,g_east,x_300,y_-350/b_rgb:00482C/v1771230785/common/f1/2026/astonmartin/2026astonmartincarright.png",
+    "ownershipPercent": 4.0,
+    "points": 0,
+    "priceMillions": 10.3
+  },
+  {
+    "name": "Haas F1 Team",
+    "slug": "haas-f1-team",
+    "teamId": 26,
+    "imageUrl": "https://media.formula1.com/image/upload/c_crop,g_east,h_803,w_2600/ar_3:2,c_pad,g_west,h_1400/ar_3:2,c_lpad,g_south_west,w_2400/l_v1771230785:common:f1:2026:haasf1team:2026haasf1teamlogowhitefr/c_scale,w_500/fl_layer_apply,g_east,x_300,y_-350/b_rgb:4d5052/v1771230785/common/f1/2026/haasf1team/2026haasf1teamcarright.png",
+    "ownershipPercent": 33.0,
+    "points": 0,
+    "priceMillions": 7.4
+  },
+  {
+    "name": "Audi",
+    "slug": "audi",
+    "teamId": 2640,
+    "imageUrl": "https://media.formula1.com/image/upload/c_crop,g_east,h_803,w_2600/ar_3:2,c_pad,g_west,h_1400/ar_3:2,c_lpad,g_south_west,w_2400/l_v1771230785:common:f1:2026:audi:2026audilogowhitefr/c_scale,w_500/fl_layer_apply,g_east,x_300,y_-350/b_rgb:6B0015/v1771230785/common/f1/2026/audi/2026audicarright.png",
+    "ownershipPercent": 18.0,
+    "points": 0,
+    "priceMillions": 6.6
+  },
+  {
+    "name": "Racing Bulls",
+    "slug": "racing-bulls",
+    "teamId": 2636,
+    "imageUrl": "https://media.formula1.com/image/upload/c_crop,g_east,h_803,w_2600/ar_3:2,c_pad,g_west,h_1400/ar_3:2,c_lpad,g_south_west,w_2400/l_v1771230785:common:f1:2026:racingbulls:2026racingbullslogowhitefr/c_scale,w_500/fl_layer_apply,g_east,x_300,y_-350/b_rgb:2345ab/v1771230785/common/f1/2026/racingbulls/2026racingbullscarright.png",
+    "ownershipPercent": 16.0,
+    "points": 0,
+    "priceMillions": 6.3
+  },
+  {
+    "name": "Cadillac",
+    "slug": "cadillac",
+    "teamId": 2641,
+    "imageUrl": "https://media.formula1.com/image/upload/c_crop,g_east,h_803,w_2600/ar_3:2,c_pad,g_west,h_1400/ar_3:2,c_lpad,g_south_west,w_2400/l_v1771230785:common:f1:2026:cadillac:2026cadillaclogowhitefr/c_scale,w_500/fl_layer_apply,g_east,x_300,y_-350/b_rgb:444444/v1771230785/common/f1/2026/cadillac/2026cadillaccarright.png",
+    "ownershipPercent": 12.0,
+    "points": 0,
+    "priceMillions": 6.0
+  }
+]

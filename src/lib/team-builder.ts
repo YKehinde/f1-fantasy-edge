@@ -1,19 +1,27 @@
 import type { ProcessedRace } from "@/hooks/use-f1-data";
 
-// Driver prices mapped by driverId (approximate F1 Fantasy prices in $M)
+// Driver prices mapped by driverId — 2026 F1 Fantasy prices in $M
 const DRIVER_PRICES: Record<string, number> = {
-  max_verstappen: 30.5, norris: 28.0, leclerc: 27.0, sainz: 24.5, piastri: 25.0,
-  hamilton: 23.0, russell: 23.5, perez: 18.0, alonso: 16.0, stroll: 10.0,
-  gasly: 12.5, ocon: 11.0, tsunoda: 11.5, ricciardo: 10.5, bottas: 7.0,
-  zhou: 6.5, kevin_magnussen: 8.5, hulkenberg: 9.0, albon: 10.0, sargeant: 6.0,
-  lawson: 9.0, bearman: 7.5, colapinto: 6.5, de_vries: 6.0, drugovich: 6.0,
-  doohan: 7.0, hadjar: 7.0, bortoleto: 7.0, antonelli: 8.0,
+  max_verstappen: 27.7, russell: 27.4, norris: 27.2, piastri: 25.5,
+  antonelli: 23.2, leclerc: 22.8, hamilton: 22.5, hadjar: 15.1,
+  gasly: 12.0, sainz: 11.8, albon: 11.6, alonso: 10.0,
+  stroll: 8.0, bearman: 7.4, ocon: 7.3, hulkenberg: 6.8,
+  lawson: 6.5, bortoleto: 6.4, lindblad: 6.2, colapinto: 6.2,
+  perez: 6.0, bottas: 5.9,
+  // Legacy driver ids that may appear in historical data
+  tsunoda: 10.0, ricciardo: 9.0, kevin_magnussen: 8.0, sargeant: 6.0,
+  zhou: 6.0, de_vries: 6.0, doohan: 7.0,
 };
 
+// Constructor prices — 2026 F1 Fantasy prices in $M
 const CONSTRUCTOR_PRICES: Record<string, number> = {
-  red_bull: 32.0, mclaren: 28.5, ferrari: 27.0, mercedes: 24.0,
-  aston_martin: 14.0, alpine: 11.5, rb: 10.0, haas: 8.0,
-  williams: 8.5, sauber: 6.0, kick_sauber: 6.0, alphatauri: 10.0,
+  mercedes: 29.3, mclaren: 28.9, red_bull: 28.2, ferrari: 23.3,
+  alpine: 12.5, williams: 12.0, aston_martin: 10.3, haas: 7.4,
+  sauber: 6.6, kick_sauber: 6.6, // Sauber rebranded as Audi
+  rb: 6.3, racing_bulls: 6.3,   // RB rebranded as Racing Bulls
+  cadillac: 6.0,
+  // Legacy ids from historical data
+  alphatauri: 8.0,
 };
 
 export type TeamDriverPick = {
@@ -38,7 +46,7 @@ export type TeamConstructorPick = {
 
 export type OptimalTeam = {
   drivers: TeamDriverPick[];
-  constructor: TeamConstructorPick;
+  constructors: TeamConstructorPick[];
   totalCost: number;
   projectedPoints: number;
   budgetRemaining: number;
@@ -136,47 +144,53 @@ export function buildOptimalTeam(
   const allDrivers = computeDriverStats(races, upToRound);
   const allConstructors = computeConstructorStats(races, upToRound);
 
-  if (allDrivers.length < 5 || allConstructors.length < 1) return null;
+  if (allDrivers.length < 5 || allConstructors.length < 2) return null;
 
   let bestTeam: OptimalTeam | null = null;
   let bestPoints = -1;
 
-  // For each constructor, find the best 5 drivers that fit the remaining budget
-  for (const constructor of allConstructors) {
-    const remainingBudget = budget - constructor.price;
-    if (remainingBudget <= 0) continue;
+  // Try all pairs of constructors
+  for (let i = 0; i < allConstructors.length; i++) {
+    for (let j = i + 1; j < allConstructors.length; j++) {
+      const c1 = allConstructors[i];
+      const c2 = allConstructors[j];
+      const constructorCost = c1.price + c2.price;
+      const remainingBudget = budget - constructorCost;
+      if (remainingBudget <= 0) continue;
 
-    // Sort drivers by value score (pts/$M) descending
-    const affordable = allDrivers
-      .filter(d => d.price <= remainingBudget)
-      .sort((a, b) => b.valueScore - a.valueScore);
+      // Sort drivers by value score (pts/$M) descending
+      const affordable = allDrivers
+        .filter(d => d.price <= remainingBudget)
+        .sort((a, b) => b.valueScore - a.valueScore);
 
-    // Greedy: pick top value drivers that fit budget
-    const picked: TeamDriverPick[] = [];
-    let spent = 0;
+      // Greedy: pick top value drivers that fit budget
+      const picked: TeamDriverPick[] = [];
+      let spent = 0;
 
-    for (const driver of affordable) {
-      if (picked.length >= 5) break;
-      if (spent + driver.price <= remainingBudget) {
-        picked.push(driver);
-        spent += driver.price;
+      for (const driver of affordable) {
+        if (picked.length >= 5) break;
+        if (spent + driver.price <= remainingBudget) {
+          picked.push(driver);
+          spent += driver.price;
+        }
       }
-    }
 
-    if (picked.length < 5) continue;
+      if (picked.length < 5) continue;
 
-    const projectedPoints = picked.reduce((s, d) => s + d.avgPoints, 0) + constructor.avgPoints;
-    const totalCost = spent + constructor.price;
+      const projectedPoints =
+        picked.reduce((s, d) => s + d.avgPoints, 0) + c1.avgPoints + c2.avgPoints;
+      const totalCost = spent + constructorCost;
 
-    if (projectedPoints > bestPoints) {
-      bestPoints = projectedPoints;
-      bestTeam = {
-        drivers: picked.sort((a, b) => b.avgPoints - a.avgPoints),
-        constructor,
-        totalCost: Math.round(totalCost * 10) / 10,
-        projectedPoints: Math.round(projectedPoints * 10) / 10,
-        budgetRemaining: Math.round((budget - totalCost) * 10) / 10,
-      };
+      if (projectedPoints > bestPoints) {
+        bestPoints = projectedPoints;
+        bestTeam = {
+          drivers: picked.sort((a, b) => b.avgPoints - a.avgPoints),
+          constructors: [c1, c2].sort((a, b) => b.avgPoints - a.avgPoints),
+          totalCost: Math.round(totalCost * 10) / 10,
+          projectedPoints: Math.round(projectedPoints * 10) / 10,
+          budgetRemaining: Math.round((budget - totalCost) * 10) / 10,
+        };
+      }
     }
   }
 

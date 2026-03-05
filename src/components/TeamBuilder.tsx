@@ -14,6 +14,7 @@ import {
   type TeamConstructorPick,
 } from "@/lib/team-builder";
 import type { ProcessedRace } from "@/hooks/use-f1-data";
+import { getConstructorImage, getDriverImage } from "@/lib/f1-api";
 
 type Props = {
   races: ProcessedRace[];
@@ -131,9 +132,13 @@ const TeamBuilder = ({ races, currentRound, children }: Props) => {
                     {/* Constructor */}
                     <div>
                       <h3 className="font-mono text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-                        <Car className="w-3.5 h-3.5 text-accent" /> CONSTRUCTOR (1)
+                        <Car className="w-3.5 h-3.5 text-accent" /> CONSTRUCTORS (2)
                       </h3>
-                      <ConstructorRow constructor={optimalTeam.constructor} highlight />
+                      <div className="space-y-1.5">
+                        {optimalTeam.constructors.map((c) => (
+                          <ConstructorRow key={c.constructorId} constructor={c} highlight />
+                        ))}
+                      </div>
                     </div>
                   </>
                 ) : (
@@ -202,12 +207,13 @@ function StatBox({ label, value, suffix, icon }: { label: string; value: string;
 }
 
 function DriverRow({ driver, rank, highlight }: { driver: TeamDriverPick; rank: number; highlight?: boolean }) {
+  const driverImage = getDriverImage(driver.name);
   return (
     <motion.div
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.03 }}
-      className={`flex items-center gap-2.5 rounded-md p-2.5 border transition-colors ${
+      className={`relative flex items-center gap-2.5 rounded-md p-2.5 border transition-colors overflow-hidden ${
         highlight
           ? "bg-secondary/80 border-border glow-red-subtle"
           : "bg-card border-border hover:bg-secondary/50"
@@ -225,23 +231,31 @@ function DriverRow({ driver, rank, highlight }: { driver: TeamDriverPick; rank: 
         </div>
         <div className="font-mono text-[10px] text-muted-foreground">{driver.team}</div>
       </div>
-      <div className="text-right flex-shrink-0 space-y-0.5">
+      <div className="text-right flex-shrink-0 space-y-0.5 z-10">
         <div className="font-mono text-sm font-bold text-foreground">{driver.avgPoints}<span className="text-[9px] text-muted-foreground ml-0.5">avg</span></div>
         <div className="flex items-center gap-2 justify-end">
           <span className="font-mono text-[10px] text-accent">${driver.price}M</span>
           <span className="font-mono text-[10px] text-positive">{driver.valueScore} v</span>
         </div>
       </div>
+      {driverImage && (
+        <img
+          src={driverImage}
+          alt={driver.name}
+          className="absolute right-0 bottom-0 h-14 w-auto object-contain opacity-15 pointer-events-none"
+        />
+      )}
     </motion.div>
   );
 }
 
 function ConstructorRow({ constructor, rank, highlight }: { constructor: TeamConstructorPick; rank?: number; highlight?: boolean }) {
+  const carImage = getConstructorImage(constructor.constructorId);
   return (
     <motion.div
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
-      className={`flex items-center gap-2.5 rounded-md p-2.5 border transition-colors ${
+      className={`relative flex items-center gap-2.5 rounded-md p-2.5 border transition-colors overflow-hidden ${
         highlight
           ? "bg-secondary/80 border-border glow-red-subtle"
           : "bg-card border-border hover:bg-secondary/50"
@@ -257,13 +271,20 @@ function ConstructorRow({ constructor, rank, highlight }: { constructor: TeamCon
       <div className="flex-1 min-w-0">
         <span className="font-display font-semibold text-sm text-foreground truncate">{constructor.name}</span>
       </div>
-      <div className="text-right flex-shrink-0 space-y-0.5">
+      <div className="text-right flex-shrink-0 space-y-0.5 z-10">
         <div className="font-mono text-sm font-bold text-foreground">{constructor.avgPoints}<span className="text-[9px] text-muted-foreground ml-0.5">avg</span></div>
         <div className="flex items-center gap-2 justify-end">
           <span className="font-mono text-[10px] text-accent">${constructor.price}M</span>
           <span className="font-mono text-[10px] text-positive">{constructor.valueScore} v</span>
         </div>
       </div>
+      {carImage && (
+        <img
+          src={carImage}
+          alt={constructor.name}
+          className="absolute right-0 bottom-0 h-12 w-auto object-contain opacity-20 pointer-events-none"
+        />
+      )}
     </motion.div>
   );
 }
