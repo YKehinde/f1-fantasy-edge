@@ -15,10 +15,10 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
-const SEASONS = [2025, 2024, 2023, 2022];
+const SEASONS = [2026, 2025, 2024, 2023, 2022];
 
 const Index = () => {
-  const [season, setSeason] = useState(2025);
+  const [season, setSeason] = useState(2026);
   const { data: allRaces, isLoading, error } = useSeasonData(season);
 
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
